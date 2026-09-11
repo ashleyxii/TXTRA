@@ -243,5 +243,5 @@ console.log(doc.toJson(schema));
 
 ## ライセンス
 
-[0BSD License (BSD Zero Clause License)](./LICENSE) © 2026 [ibara](https://github.com/ashleyxii)  
+[0BSD License (BSD Zero Clause License)](./LICENSE) © 2026 [ashleyxii](https://github.com/ashleyxii)  
 著作権表示・許諾表示の保持義務も含めて免除されたパブリックドメイン相当のライセンスです。商用・非商用を問わず自由にご利用いただけます。
