@@ -1,0 +1,53 @@
+{
+  "name": "txtra",
+  "version": "1.0.0",
+  "description": "TXT in Readable Annotation - Human-friendly structured text format",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    }
+  },
+  "bin": {
+    "txtra": "bin/txtra.js",
+    "txtra-js": "bin/txtra.js"
+  },
+  "files": [
+    "src",
+    "bin",
+    "docs",
+    "TXTRA.md",
+    "README.md",
+    "README_ja.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "bench": "node benchmarks/bench.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashleyxii/TXTRA.git"
+  },
+  "keywords": [
+    "txtra",
+    "parser",
+    "markdown",
+    "mermaid",
+    "ast",
+    "dsl",
+    "structured-text"
+  ],
+  "author": "ibara",
+  "license": "0BSD",
+  "bugs": {
+    "url": "https://github.com/ashleyxii/TXTRA/issues"
+  },
+  "homepage": "https://ashleyxii.github.io/TXTRA/"
+}

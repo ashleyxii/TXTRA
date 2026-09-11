@@ -1,0 +1,7 @@
+#editor {
+    font-family: "Fira Code", monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
