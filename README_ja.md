@@ -4,11 +4,10 @@
 
 > プレーンテキストの自然さと、決定論的な木構造を両立する軽量構造化テキストフォーマット
 
-[![npm version](https://img.shields.io/badge/npm-v1.0.0-cb3837.svg)](https://www.npmjs.com/package/txtra)
+[![npm version](https://img.shields.io/badge/npm-v1.0.1-cb3837.svg)](https://www.npmjs.com/package/txtra)
 [![License: 0BSD](https://img.shields.io/badge/License-0BSD-blue.svg)](https://opensource.org/licenses/0BSD)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](package.json)
 [![Tests: 49 passing](https://img.shields.io/badge/tests-49%20passing-brightgreen.svg)](tests/)
-[![Speed: 1.8M lines/sec](https://img.shields.io/badge/speed-1.8M%20lines%2Fsec-orange.svg)](docs/performance.md)
 [![TypeScript](https://img.shields.io/badge/types-TypeScript-blue.svg)](src/index.d.ts)
 
 [Web Playground (Live Demo)](https://ashleyxii.github.io/TXTRA/)  
@@ -16,21 +15,16 @@
 
 ---
 
-## 1. 背景と設計理念 (Background & Philosophy)
+## 1. 背景と基本コンセプト (Background & Concepts)
 
 TXTRA は、ターミナル、スマートフォンのメモ、LLM とのチャット入力欄など、高級エディタの補完や Markdown の自動プレビューが望めない環境での使用を想定して設計された軽量構造化テキストフォーマットです。
 
-### 理念
-1. プレーンテキストの視認ノイズ最小化を希求します。
-2. あらゆる入力環境と鍵打感に配慮します。
-3. 情報をただの読みやすいTXTとして記述します。
-4. 以上をもって、我々は我々に、プレーンテキストの主権を取り戻します。
-
+### 主要コンセプト
 - __生テキストの可読性__: プレビューなしでそのまま読める、静かな構文記号の選択。
-- __直感的文法__: インデントネスト、複数空白でセパレート、キー: バリュー、以上。
-- __入力性の追求__: スマートフォンやシェル環境でも軽快に入力するための代替構文。
-- __集中持続性__: 思考を巻き戻さないための、キーの重複許容と後方優先のリスト概念。
-- __木構造への整形__: 曖昧さをパーサー側で吸収し、瞬時に AST や JSON へ変換。
+- __直感的文法__: インデントによるネスト、複数空白での配列、キー: バリュー。
+- __入力性の追求__: スマートフォンやシェル環境でも軽快に入力するための代替構文（`..`）。
+- __集中持続性__: 思考を巻き戻さないための、キーの重複許容と後方優先のリスト・参照概念（`.Key:`）。
+- __木構造への整形__: 曖昧さをパーサー側で吸収し、決定論的に AST や JSON へ変換。
 
 ---
 
@@ -204,52 +198,46 @@ Fanout:
 
 ---
 
-## 5. LLM・構造化出力での活用 (AI-Native)
+## 5. スキーマ検証と型キャスト (`toJsonWithSchema`)
 
-TXTRA は単純な構文指示だけで、学習済みのTSV、YAML、Markdown構文の解釈能力にフリーライドできるため、
-LLMのアテンションコストが人間同様に比較的低く、出力も構文エラーを起こしません。
+TXTRA は生テキストを文字列ベースの AST ツリーとして解釈します。LLM の出力テキストや設定ファイルなどから厳密なデータ構造（数値、真偽値、オブジェクト配列など）を取り出したい場合、`doc.toJson(schema)` に標準的な JSON Schema を渡すことで、決定論的に型キャストおよび構造化を行えます。
 
-```text
-以下の形式（TXTRA 記法）で出力してください。
-- インデントは半角スペース2つ
-- キーと値は「キー: 値」
-- 複数要素は空白4文字またはタブ区切り
-
+```typescript
+const doc = txtra(`
 Result
   status: success
   count: 3
   items: Apple    Banana    Orange
-```
+`);
 
-1. __トークン消費の最小化__: 括弧や引用符の反復を排し、純粋な情報にトークンを集中させます。
-2. __ストリーミングの自然な視読__: 生成途中のテキストをそのまま人間が読解できます。
-3. __決定論的パース__: 出力テキストは瞬時に AST（匿名ノードは `_`）、CanonicalForm、JSON、Markdown へ変換されます。
-4. __JSON Schema 連動 (`doc.toJson(schema)`)__: スキーマに従い、型キャスト（integer, boolean 等）や構造化を決定論的に確定させます。
+const schema = {
+  type: 'object',
+  properties: {
+    status: { type: 'string' },
+    count: { type: 'integer' },
+    items: { type: 'array', items: { type: 'string' } }
+  }
+};
+
+console.log(doc.toJson(schema));
+// => { status: 'success', count: 3, items: ['Apple', 'Banana', 'Orange'] }
+```
 
 ---
 
-## 6. 処理性能 (Performance)
+## 6. 設計方針とアーキテクチャ
 
-外部依存ゼロの Pure JavaScript 実装。文字コード走査と Fast Path 設計により、極限のパース速度を誇ります。
-
-```
-[npm run bench 実測値 (大規模 10,000 行)]
-  parseTXTRA      :   5.67 ms  |  速度:  1,763,868 lines/sec (秒間約176万行)
-  stringifyTXTRA  :   0.64 ms  |  速度: 15,748,607 lines/sec (秒間約1570万行)
-  toMarkdown      :   0.62 ms  |  速度: 16,166,330 lines/sec (秒間約1610万行)
-  markdownToTXTRA :   0.55 ms  |  速度:  1,829,228 lines/sec (秒間約180万行)
-```
-
-詳細な分析は [docs/performance.md](./docs/performance.md) を参照してください。
+- **依存パッケージゼロ**: 外部ランタイムライブラリを一切使わない Pure JavaScript 実装。
+- **1パス逐次走査**: 重い正規表現バックトラックを排した、高速で軽量な構文解析。
+- **ユニバーサル対応**: TypeScript 型定義を完全同梱し、Node.js、ブラウザ、Edge 環境のどこでもそのまま動作。
 
 ---
 
 ## ドキュメント一覧
 
-- [TXTRA 言語仕様書 (TXTRA.md)](./TXTRA.md) — *完全な言語仕様書と決定論的内部表現。*
-- [パフォーマンス分析 (docs/performance.md)](./docs/performance.md) — *ベンチマークと設計指針。*
+- [TXTRA 言語仕様書 (TXTRA.md)](./TXTRA.md) — *言語仕様書と AST 内部表現。*
+- [English Documentation (README.md)](./README.md) — *英語ドキュメント*
 - [世界人綴宣言 (docs/unilateral_desolation_of_human_writes.md)](./docs/unilateral_desolation_of_human_writes.md) — *マニフェスト。*
-- [English Documentation (README.md)](./README.md)
 
 ---
 

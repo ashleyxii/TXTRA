@@ -4,11 +4,10 @@
 
 > A lightweight structured text format balancing plain-text readability and deterministic tree structures.
 
-[![npm version](https://img.shields.io/badge/npm-v1.0.0-cb3837.svg)](https://www.npmjs.com/package/txtra)
+[![npm version](https://img.shields.io/badge/npm-v1.0.1-cb3837.svg)](https://www.npmjs.com/package/txtra)
 [![License: 0BSD](https://img.shields.io/badge/License-0BSD-blue.svg)](https://opensource.org/licenses/0BSD)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](package.json)
 [![Tests: 49 passing](https://img.shields.io/badge/tests-49%20passing-brightgreen.svg)](tests/)
-[![Speed: 1.8M lines/sec](https://img.shields.io/badge/speed-1.8M%20lines%2Fsec-orange.svg)](docs/performance.md)
 [![TypeScript](https://img.shields.io/badge/types-TypeScript-blue.svg)](src/index.d.ts)
 
 [Web Playground (Live Demo)](https://ashleyxii.github.io/TXTRA/)  
@@ -16,21 +15,16 @@ Try real-time parsing, Markdown generation, and Mermaid flowcharts directly in y
 
 ---
 
-## 1. Background & Philosophy
+## 1. Background & Concepts
 
 TXTRA is a lightweight structured text format designed for minimal environments where sophisticated editor autocompletion or live Markdown rendering cannot be expected—such as CLI terminals, smartphone notes, and LLM chat inputs.
 
-### Philosophy
-1. We seek to minimize visual noise in plain text.
-2. We respect every input environment and keystroke rhythm.
-3. We simply write information as readable TXT.
-4. Through these principles, we reclaim our sovereignty over plain text.
-
-- __Raw Text Readability__: Silent, unobtrusive syntax symbols that read cleanly without a preview.
-- __Intuitive Grammar__: Indented nesting, multi-space separation, key-value pairs—that is all.
-- __Input Ergonomics__: Alternative syntaxes optimized for smartphones and terminal shells.
-- __Sustained Flow__: Append-only design allowing duplicate keys and latest-first references without rewinding thoughts.
-- __Tree Compilation__: Tolerates human ambiguity and compiles deterministically into AST or JSON.
+### Core Concepts
+- __Raw Text Readability__: Unobtrusive syntax that reads cleanly as plain text without requiring a rendered preview.
+- __Minimal Grammar__: Indented nesting, multi-space separation, and key-value pairs.
+- __Input Ergonomics__: Alternative syntax (`..`) optimized for mobile devices and terminals without requiring `Shift`.
+- __Append-only Flow__: Allows duplicate keys and latest-first references (`.Key:`) so thoughts don't need rewinding.
+- __Deterministic Parsing__: Compiles unambiguously into AST, Canonical Form, JSON, or Markdown.
 
 ---
 
@@ -207,51 +201,46 @@ Fanout:
 
 ---
 
-## 5. AI-Native & Structured Output (AI-Native)
+## 5. Schema Validation & Type Casting (`toJsonWithSchema`)
 
-With simple syntax instructions alone, TXTRA free-rides on LLMs' pre-trained comprehension of TSV, YAML, and Markdown syntax. As a result, the model's attention overhead remains relatively low—just as it is for humans—and outputs avoid syntax errors.
+TXTRA parses raw text into string-based AST trees by default. When structured types (integers, booleans, arrays of objects) are required—such as when parsing LLM outputs or configuration files—`doc.toJson(schema)` validates and casts nodes according to a standard JSON Schema definition.
 
-```text
-Please output in the following format (TXTRA syntax):
-- Indent by 2 spaces
-- Key and value as "Key: Value"
-- Multiple elements separated by 4 spaces or tabs
-
+```typescript
+const doc = txtra(`
 Result
   status: success
   count: 3
   items: Apple    Banana    Orange
-```
+`);
 
-1. __Token Minimization__: Eliminates repetitive braces and quotes, focusing tokens strictly on pure information.
-2. __Natural Streaming Readability__: Humans can read and verify text comfortably in real-time as it streams.
-3. __Deterministic Parsing__: Generated text converts instantly into an AST (anonymous nodes as `_`), CanonicalForm, JSON, or Markdown.
-4. __JSON Schema Binding (`doc.toJson(schema)`)__: Concretizes type casting (integers, booleans, etc.) and object structures deterministically according to schema.
+const schema = {
+  type: 'object',
+  properties: {
+    status: { type: 'string' },
+    count: { type: 'integer' },
+    items: { type: 'array', items: { type: 'string' } }
+  }
+};
+
+console.log(doc.toJson(schema));
+// => { status: 'success', count: 3, items: ['Apple', 'Banana', 'Orange'] }
+```
 
 ---
 
-## 6. Performance
+## 6. Architecture & Performance
 
-A zero-dependency Pure JavaScript implementation. Delivers extreme parsing speeds via linear character scanning and Fast Path architectures.
-
-```
-[npm run bench measurements (Large 10,000 lines)]
-  parseTXTRA      :   5.67 ms  |  Speed:  1,763,868 lines/sec (~1.76M lines/s)
-  stringifyTXTRA  :   0.64 ms  |  Speed: 15,748,607 lines/sec (~15.7M lines/s)
-  toMarkdown      :   0.62 ms  |  Speed: 16,166,330 lines/sec (~16.1M lines/s)
-  markdownToTXTRA :   0.55 ms  |  Speed:  1,829,228 lines/sec (~1.80M lines/s)
-```
-
-See [docs/performance.md](./docs/performance.md) for detailed analysis and design guidelines.
+- **Zero Dependencies**: Pure JavaScript implementation with no external runtime packages.
+- **Single-Pass Scanner**: Lightweight character scanning avoiding heavy regular expression backtracking.
+- **Universal Runtime**: Standard ES Modules with TypeScript declarations included, running seamlessly across Node.js, browsers, and edge environments.
 
 ---
 
 ## Documentation
 
-- [TXTRA Specification (TXTRA.md)](./TXTRA.md) — *Complete syntax spec and deterministic representations.*
-- [Performance Analysis (docs/performance.md)](./docs/performance.md) — *Benchmark analysis and design principles.*
+- [TXTRA Specification (TXTRA.md)](./TXTRA.md) — *Syntax specification and AST representations.*
+- [Japanese Documentation (README_ja.md)](./README_ja.md) — *日本語ドキュメント*
 - [The Unilateral Desolation of Human Writes (docs/unilateral_desolation_of_human_writes.md)](./docs/unilateral_desolation_of_human_writes.md) — *Manifesto.*
-- [Japanese Documentation (README_ja.md)](./README_ja.md)
 
 ---
 
