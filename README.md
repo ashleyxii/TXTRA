@@ -65,11 +65,13 @@ Matrix:
 
 | Aspect | JSON | YAML | Markdown | TXTRA |
 |:---|:---|:---|:---|:---|
-| Notation Style | Strict symbolic | Moderately strict spatial | Loose symbolic | Loose spatial |
-| Syntax Rules | Extremely few | Extremely many | Moderately many | Few |
-| Token Efficiency | Low | High | High | Highest (narrow margin) |
-| LLM Comprehension | High | High | Highest | Moderately high |
-| Extensibility | Rejected | Rejected | Allowed | Allowed |
+| **Primary Use** | Machine communication / API | App configuration | Human-oriented documents | **Human thought notes / LLM I/O** |
+| **Raw Text Readability** | Low (Bracket & quote noise) | Medium (Indentation-dependent) | High (Preview recommended) | **High (Natural without preview)** |
+| **Typing Ergonomics** | Tedious (Error-prone punctuation) | Fair (Strict indentation, no tabs) | Fair (Frequent symbol switching) | **Extremely comfortable (Minimal Shift/symbols)** |
+| **Structural Determinism** | Strict (100% mechanical) | Strict (Huge specification) | Very low (Freeform, hard to extract) | **Deterministic (Direct AST / JSON mapping)** |
+| **Append-only Workflow** | Overwrites or discouraged | Syntax error (Duplicate keys) | Free (No data structure) | **Allowed (Auto-list / Reference scope)** |
+| **Token Efficiency** | Low (Redundant) | High | High | **High** |
+| **Ecosystem & History** | Global standard | Global standard | Global standard | **Emerging (Zero-dependency parser)** |
 
 ---
 

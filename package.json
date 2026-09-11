@@ -1,6 +1,6 @@
 {
   "name": "txtra",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TXT in Readable Annotation - Human-friendly structured text format",
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -17,10 +17,7 @@
   "files": [
     "src",
     "bin",
-    "docs",
-    "TXTRA.md",
     "README.md",
-    "README_ja.md",
     "LICENSE"
   ],
   "type": "module",
