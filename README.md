@@ -15,16 +15,21 @@ Try real-time parsing, Markdown generation, and Mermaid flowcharts directly in y
 
 ---
 
-## 1. Background & Concepts
+## 1. Background & Philosophy
 
 TXTRA is a lightweight structured text format designed for minimal environments where sophisticated editor autocompletion or live Markdown rendering cannot be expected—such as CLI terminals, smartphone notes, and LLM chat inputs.
 
-### Core Concepts
-- __Raw Text Readability__: Unobtrusive syntax that reads cleanly as plain text without requiring a rendered preview.
-- __Minimal Grammar__: Indented nesting, multi-space separation, and key-value pairs.
-- __Input Ergonomics__: Alternative syntax (`..`) optimized for mobile devices and terminals without requiring `Shift`.
-- __Append-only Flow__: Allows duplicate keys and latest-first references (`.Key:`) so thoughts don't need rewinding.
-- __Deterministic Parsing__: Compiles unambiguously into AST, Canonical Form, JSON, or Markdown.
+### Philosophy
+1. We seek to minimize visual noise in plain text.
+2. We respect every input environment and keystroke rhythm.
+3. We simply write information as readable TXT.
+4. Through these principles, we reclaim our sovereignty over plain text.
+
+- __Raw Text Readability__: Silent, unobtrusive syntax symbols that read cleanly without a preview.
+- __Intuitive Grammar__: Indented nesting, multi-space separation, key-value pairs—that is all.
+- __Input Ergonomics__: Alternative syntaxes optimized for smartphones and terminal shells.
+- __Sustained Flow__: Append-only design allowing duplicate keys and latest-first references without rewinding thoughts.
+- __Tree Compilation__: Tolerates human ambiguity and compiles deterministically into AST or JSON.
 
 ---
 
@@ -54,18 +59,6 @@ Matrix:
   0    1    0
   0    0    1
 ```
-
-### Format Comparison
-
-| Aspect | JSON | YAML | Markdown | TXTRA |
-|:---|:---|:---|:---|:---|
-| **Primary Use** | Machine communication / API | App configuration | Human-oriented documents | **Human thought notes / LLM I/O** |
-| **Raw Text Readability** | Low (Bracket & quote noise) | Medium (Indentation-dependent) | High (Preview recommended) | **High (Natural without preview)** |
-| **Typing Ergonomics** | Tedious (Error-prone punctuation) | Fair (Strict indentation, no tabs) | Fair (Frequent symbol switching) | **Extremely comfortable (Minimal Shift/symbols)** |
-| **Structural Determinism** | Strict (100% mechanical) | Strict (Huge specification) | Very low (Freeform, hard to extract) | **Deterministic (Direct AST / JSON mapping)** |
-| **Append-only Workflow** | Overwrites or discouraged | Syntax error (Duplicate keys) | Free (No data structure) | **Allowed (Auto-list / Reference scope)** |
-| **Token Efficiency** | Low (Redundant) | High | High | **High** |
-| **Ecosystem & History** | Global standard | Global standard | Global standard | **Emerging (Zero-dependency parser)** |
 
 ---
 

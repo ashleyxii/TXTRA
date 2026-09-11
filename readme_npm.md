@@ -257,19 +257,6 @@ interface TXTRANode {
 
 ---
 
-## 5. Specification Comparison
-
-| Aspect | JSON | YAML | Markdown | TXTRA |
-|:---|:---|:---|:---|:---|
-| **Primary Use** | Machine I/O / API | App Configuration | Human Documents | **Thought Notes & LLM I/O** |
-| **Raw Readability** | Low (Punctuation noise) | Medium (Strict indentation) | High (Preview advised) | **High (Zero preview needed)** |
-| **Typing Ergonomics** | Low (Quotes & brackets) | Fair (No tabs, strict) | Fair (Syntax switching) | **High (Minimal Shift/symbols)** |
-| **Determinism** | Strict | Strict (Over-complex spec) | Poor (Unstructured text) | **Deterministic AST / JSON** |
-| **Append-only Mode** | Overwrites or invalid | Syntax Error | Free (Unstructured) | **Native (Lists & .Dot scopes)** |
-| **Ecosystem** | Ubiquitous | Ubiquitous | Ubiquitous | **Zero-dependency parser** |
-
----
-
 ## License
 
 [0BSD (Zero-Clause BSD)](LICENSE) — Free for personal and commercial use without attribution requirements.
