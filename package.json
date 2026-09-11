@@ -23,7 +23,9 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "bench": "node benchmarks/bench.js"
+    "bench": "node benchmarks/bench.js",
+    "prepack": "cp README.md .README.github.md && cp readme_npm.md README.md",
+    "postpack": "[ -f .README.github.md ] && mv .README.github.md README.md || true"
   },
   "engines": {
     "node": ">=24"
