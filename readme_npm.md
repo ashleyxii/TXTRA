@@ -3,10 +3,9 @@
 > **TXT in Readable Annotation** — Lightweight structured text format, parser, and converter for JavaScript & TypeScript.  
 > Zero dependencies. Zero build-step required. 100% deterministic tree parsing.
 
-[![npm version](https://img.shields.io/badge/npm-v1.0.1-cb3837.svg)](https://www.npmjs.com/package/txtra)
+[![npm version](https://img.shields.io/badge/npm-v1.0.2-cb3837.svg)](https://www.npmjs.com/package/txtra)
 [![License: 0BSD](https://img.shields.io/badge/License-0BSD-blue.svg)](https://opensource.org/licenses/0BSD)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](package.json)
-[![Tests: 49 passing](https://img.shields.io/badge/tests-49%20passing-brightgreen.svg)](tests/)
 [![TypeScript](https://img.shields.io/badge/types-TypeScript-blue.svg)](src/index.d.ts)
 
 ---
@@ -136,7 +135,7 @@ Config..
 *Note: Evaluated only when immediately followed by whitespace or line end. Never conflicts with `../` (paths) or `1..10` (ranges).*
 
 ### 3.4 In-line Arrays & Delimiters
-Separating elements by **2 or more spaces** (or tabs) within a single line defines an inline array. 4 spaces are recommended.
+Separating elements by **3 or more spaces** (or tabs) within a single line defines an inline array. 4 spaces are recommended.
 
 ```txtra
 Colors: Red    Green    Blue
@@ -186,7 +185,7 @@ Shopping:
 TXTRA provides clean arrow notation for workflows, pipelines, and state machines. It parses to AST and serializes directly to Mermaid flowcharts (`graph TD`).
 
 - **Recommended Arrow**: `>>` (double greater-than, effortless typing).
-- **Supported Arrows**: `>>`, `->`, `-->`, `==>`, `-.->`
+- **Supported Arrows**: `>>`, `->`, `-->`, `==>`, `-.->`, and physical alias `gggt` (within inline array contexts).
 
 #### Transitions with Labels
 ```txtra
@@ -233,7 +232,7 @@ App.: port: 8080.: host: localhost
 ### 3.10 Escapes
 - Backslash `\`: Literal single-character escape (e.g., `\:`, `\..`).
 - Inline backticks `` `...` ``: Preserves literal text including delimiters.
-- Code blocks ` ```...``` `: Preserves multi-line raw blocks.
+- Code blocks ` ```...``` ` or `,,,,... ,,,,`: Preserves multi-line raw blocks.
 
 ---
 

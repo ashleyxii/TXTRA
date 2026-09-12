@@ -4,7 +4,7 @@
 
 > A lightweight structured text format balancing plain-text readability and deterministic tree structures.
 
-[![npm version](https://img.shields.io/badge/npm-v1.0.1-cb3837.svg)](https://www.npmjs.com/package/txtra)
+[![npm version](https://img.shields.io/badge/npm-v1.0.2-cb3837.svg)](https://www.npmjs.com/package/txtra)
 [![License: 0BSD](https://img.shields.io/badge/License-0BSD-blue.svg)](https://opensource.org/licenses/0BSD)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](package.json)
 [![TypeScript](https://img.shields.io/badge/types-TypeScript-blue.svg)](src/index.d.ts)
@@ -232,7 +232,7 @@ console.log(doc.toJson(schema));
 
 - [TXTRA Specification (TXTRA.md)](./TXTRA.md) — *Syntax specification and AST representations.*
 - [Japanese Documentation (README_ja.md)](./README_ja.md) — *日本語ドキュメント*
-- [The Unilateral Desolation of Human Writes (docs/unilateral_desolation_of_human_writes.md)](./docs/unilateral_desolation_of_human_writes.md) — *Manifesto.*
+- [The Universal Declaration of Human Writes (docs/UDHW.md)](./docs/UDHW.md) — *Manifesto.*
 
 ---
 

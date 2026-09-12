@@ -9,7 +9,7 @@ import { parseIndent } from './indent.js';
 
 export { parseIndent };
 
-const ARRAY_SPLIT_REGEX = /[ ]{2,}|\t+/;
+const ARRAY_SPLIT_REGEX = /[ ]{3,}|\t+/;
 const DOUBLE_DOT_KEY_REGEX = /^(\.?)(?![\.\/])([^\t\r\n:]*?[^\s.:])\.\.(?:[ \t]+(.*)|$)/;
 
 /**
@@ -20,16 +20,16 @@ const DOUBLE_DOT_KEY_REGEX = /^(\.?)(?![\.\/])([^\t\r\n:]*?[^\s.:])\.\.(?:[ \t]+
  * @returns {string} 展開後の文字列
  */
 export function expandVirtualNewlines(source) {
-  if (!source || (!source.includes('.:') && !source.includes(';;'))) {
+  if (!source || !source.includes('.:')) {
     return source;
   }
   const { masked, unmask } = maskEscapes(source);
-  const expanded = masked.replace(/[ \t]*(?:\.:|;;)[ \t]?/gm, '\n');
+  const expanded = masked.replace(/[ \t]*\.:[ \t]?/gm, '\n');
   return unmask(expanded);
 }
 
 /**
- * 文字列を空白2文字以上またはタブ文字で配列に分割する。
+ * 文字列を空白3文字以上またはタブ文字で配列に分割する。
  * 分割不要な単一値の場合は即座に配列化して正規表現をバイパスします。
  * @param {string} text - 分割対象文字列
  * @param {(s: string) => string} unmask - エスケープ復元関数
@@ -40,8 +40,8 @@ export function splitArrayValues(text, unmask) {
   const trimmed = text.trim();
   if (trimmed === '') return [];
 
-  // 空白2連続またはタブが含まれない場合は正規表現分割をバイパス
-  if (!text.includes('  ') && !text.includes('\t')) {
+  // 空白3連続またはタブが含まれない場合は正規表現分割をバイパス
+  if (!text.includes('   ') && !text.includes('\t')) {
     const val = unmask(trimmed);
     return val.length > 0 ? [val] : [];
   }
@@ -175,6 +175,7 @@ export function tokenize(source) {
   const tokens = [];
 
   let inCodeBlock = false;
+  let codeFenceType = null;
   let codeFenceLang = '';
   let codeBlockBuffer = [];
   let codeBlockDepth = 0;
@@ -182,32 +183,38 @@ export function tokenize(source) {
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
     const rawLine = lines[lineIndex];
 
-    // コードフェンスの判定 (```)
-    if (rawLine.includes('```')) {
-      const fenceMatch = rawLine.match(/^(\s*)```(.*)$/);
-      if (fenceMatch) {
-        if (!inCodeBlock) {
+    // コードフェンスおよびブロックエイリアスの判定 (``` または ,,,,)
+    if (!inCodeBlock) {
+      if (rawLine.includes('```') || rawLine.includes(',,,,')) {
+        const fenceMatch = rawLine.match(/^(\s*)(```|,{4,})(.*)$/);
+        if (fenceMatch) {
           inCodeBlock = true;
+          codeFenceType = fenceMatch[2].startsWith('`') ? '```' : ',,,,';
           codeBlockDepth = Math.floor(fenceMatch[1].replace(/\t/g, '  ').length / 2);
-          codeFenceLang = fenceMatch[2].trim();
+          codeFenceLang = fenceMatch[3].trim();
           codeBlockBuffer = [];
-          continue;
-        } else {
-          inCodeBlock = false;
-          tokens.push({
-            type: 'CODE_BLOCK',
-            node: '_CODE',
-            depth: codeBlockDepth,
-            lang: codeFenceLang,
-            data: [codeBlockBuffer.join('\n')],
-            line: lineIndex + 1
-          });
           continue;
         }
       }
-    }
+    } else {
+      // 終了フェンスの判定: 開始と同じ種類のフェンス記号で閉じる
+      const isCloseFence = codeFenceType === '```'
+        ? /^(\s*)```(.*)$/.test(rawLine)
+        : /^(\s*),{4,}(.*)$/.test(rawLine);
 
-    if (inCodeBlock) {
+      if (isCloseFence) {
+        inCodeBlock = false;
+        codeFenceType = null;
+        tokens.push({
+          type: 'CODE_BLOCK',
+          node: '_CODE',
+          depth: codeBlockDepth,
+          lang: codeFenceLang,
+          data: [codeBlockBuffer.join('\n')],
+          line: lineIndex + 1
+        });
+        continue;
+      }
       codeBlockBuffer.push(rawLine);
       continue;
     }

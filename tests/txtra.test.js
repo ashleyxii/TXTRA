@@ -204,17 +204,27 @@ test('タブ文字インデント: \\t がインデント1レベルとして解�
   assert.deepEqual(ast[0].data[0], { node: 'Child', data: ['Hello'] });
 });
 
-test('配列セパレーター: 空白2文字以上およびタブ文字（TSV）での分割', () => {
-  // 空白2文字
+test('配列セパレーター: 空白3文字以上およびタブ文字（TSV）での分割 (update 1.0.2: 2+ → 3+)', () => {
+  // 空白2文字は単一テキスト値として維持される（分割されない）
   const twoSpaces = 'DATA: A  B  C';
-  const ast1 = parseTXTRA(twoSpaces);
-  assert.deepEqual(ast1[0].data, ['A', 'B', 'C']);
+  const astTwo = parseTXTRA(twoSpaces);
+  assert.deepEqual(astTwo[0].data, ['A  B  C']);
+
+  // 空白3文字で配列分割される
+  const threeSpaces = 'DATA: A   B   C';
+  const astThree = parseTXTRA(threeSpaces);
+  assert.deepEqual(astThree[0].data, ['A', 'B', 'C']);
+
+  // 推奨の空白4文字で配列分割される
+  const fourSpaces = 'DATA: A    B    C';
+  const astFour = parseTXTRA(fourSpaces);
+  assert.deepEqual(astFour[0].data, ['A', 'B', 'C']);
 
   // タブ文字 (TSVコピペデータ)
   const tsvInput = 'Matrix:\n  1\t2\t3\n  4\t5\t6';
-  const ast2 = parseTXTRA(tsvInput);
-  assert.deepEqual(ast2[0].data[0], { node: '_', data: ['1', '2', '3'] });
-  assert.deepEqual(ast2[0].data[1], { node: '_', data: ['4', '5', '6'] });
+  const astTsv = parseTXTRA(tsvInput);
+  assert.deepEqual(astTsv[0].data[0], { node: '_', data: ['1', '2', '3'] });
+  assert.deepEqual(astTsv[0].data[1], { node: '_', data: ['4', '5', '6'] });
 });
 
 test('明示リスト (- , *): インデントなしでも直前の親ノード下に自動ネストされる', () => {
@@ -337,7 +347,7 @@ test('末尾空白: 行末スペースによる空文字 ("") の配列化が発
   assert.deepEqual(ast2[0].data, ['value']);
 
   // 3. 配列セパレーター末尾に空白2つ
-  const ast3 = parseTXTRA('key: A  B  ');
+  const ast3 = parseTXTRA('key: A    B  ');
   assert.deepEqual(ast3[0].data, ['A', 'B']);
 
   // 4. TSV / 複数スペース末尾
@@ -393,4 +403,90 @@ Config..
     { node: 'range', data: ['1..10'] },
     { node: 'status', data: ['wait...'] }
   ]);
+});
+
+test('ブロックエイリアス (,,,,): コードブロックフェンスの代替として正常にパースされること', () => {
+  const input = `
+,,,,
+plain block
+line 2
+,,,,
+`;
+  const ast = parseTXTRA(input);
+  assert.equal(ast.length, 1);
+  assert.equal(ast[0].node, '_CODE');
+  assert.equal(ast[0].lang, '');
+  assert.equal(ast[0].data[0], 'plain block\nline 2');
+
+  // 言語指定付き
+  const inputWithLang = `
+,,,,python
+def add(a, b):
+    return a + b
+,,,,
+`;
+  const astLang = parseTXTRA(inputWithLang);
+  assert.equal(astLang.length, 1);
+  assert.equal(astLang[0].node, '_CODE');
+  assert.equal(astLang[0].lang, 'python');
+  assert.equal(astLang[0].data[0], 'def add(a, b):\n    return a + b');
+
+  // Markdown へのレンダリング検証
+  const md = toMarkdown(astLang);
+  assert.match(md, /```python\ndef add\(a, b\):\n    return a \+ b\n```/);
+
+  // 地の文のカンマ（, や ,, や ,,,）と誤爆しないこと
+  const commasInput = `
+Item:
+  text: apple, banana,, cherry,,, date
+`;
+  const commasAst = parseTXTRA(commasInput);
+  assert.equal(commasAst[0].node, 'Item');
+  assert.equal(commasAst[0].data[0].node, 'text');
+  assert.deepEqual(commasAst[0].data[0].data, ['apple, banana,, cherry,,, date']);
+});
+
+test('アローエイリアス (gggt): >> の代替エイリアスとして正常に Mermaid へ変換されること', () => {
+  // 1. 直列チェーン接続
+  const chainInput = `
+Step1    gggt    Step2    gggt    Step3
+`;
+  const mermaidChain = toMermaid(chainInput);
+  assert.match(mermaidChain, /\["Step1"\] --> \w+\["Step2"\]/);
+  assert.match(mermaidChain, /\["Step2"\] --> \w+\["Step3"\]/);
+
+  // 2. 行頭継続アロー
+  const continueInput = `
+StartNode
+gggt    NextNode
+`;
+  const mermaidContinue = toMermaid(continueInput);
+  assert.match(mermaidContinue, /\["StartNode"\] --> \w+\["NextNode"\]/);
+
+  // 3. Fanout (1対多の分岐)
+  const fanoutInput = `
+Queue    gggt    WorkerA    WorkerB
+`;
+  const mermaidFanout = toMermaid(fanoutInput);
+  assert.match(mermaidFanout, /\["Queue"\] --> \w+\["WorkerA"\]/);
+  assert.match(mermaidFanout, /\["Queue"\] --> \w+\["WorkerB"\]/);
+
+  // 4. toMarkdown 内での自動 Mermaid コードブロック展開
+  const docInput = `
+Pipeline:
+  Ingest    gggt    Process    gggt    Store
+`;
+  const ast = parseTXTRA(docInput);
+  const md = toMarkdown(ast);
+  assert.match(md, /```mermaid\nflowchart LR/);
+  assert.match(md, /\["Ingest"\] --> \w+\["Process"\]/);
+
+  // 5. 通常の単語やスペース1個での誤爆防止
+  const normalText = `
+Item:
+  desc: This is gggt example without 3 spaces
+`;
+  const normalAst = parseTXTRA(normalText);
+  const normalMd = toMarkdown(normalAst);
+  assert.ok(!normalMd.includes('```mermaid'));
 });

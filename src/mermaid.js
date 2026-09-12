@@ -4,9 +4,9 @@
  * ノードIDと表示ラベルの分離により、空白・括弧・記号・Mermaid予約語による構文エラーを完全防止します。
  */
 
-// 矢印セパレーター正規表現 (>> , --> , -.-> , ==> , -> , → , ⇒)
-const ARROW_SPLIT_REGEX = /\s*(?:>>|-->|-\.->|==>|->|→|⇒)\s*/;
-const ARROW_START_REGEX = /^(?:>>|-->|-\.->|==>|->|→|⇒)/;
+// 矢印セパレーター正規表現 (>> , --> , -.-> , ==> , -> , → , ⇒ , および gggt アローエイリアス)
+const ARROW_SPLIT_REGEX = /(?:\s*(?:>>|-->|-\.->|==>|->|→|⇒)\s*|(?:\s{3,}|\t+|^)gggt(?:[ ]{3,}|\t+))/;
+const ARROW_START_REGEX = /^(?:>>|-->|-\.->|==>|->|→|⇒|gggt(?:[ ]{3,}|\t+))/;
 const LABEL_ARROW_REGEX = /^(?:(.+?)\s+)?(?:--|==|-\.)([^-=.]+)(?:->|==>|\.->)\s+(.+)$/;
 
 /**
@@ -69,7 +69,7 @@ export function toMermaid(text, direction = 'LR') {
       continue;
     }
 
-    // 2. 矢印記号 (>> , --> , -> , → 等) によるチェーン
+    // 2. 矢印記号 (>> , --> , -> , → , gggt 等) によるチェーン
     if (ARROW_SPLIT_REGEX.test(line)) {
       const isStartWithArrow = ARROW_START_REGEX.test(line);
       const parts = line.split(ARROW_SPLIT_REGEX).map(p => p.trim()).filter(Boolean);
@@ -86,8 +86,8 @@ export function toMermaid(text, direction = 'LR') {
       }
 
       for (let i = 0; i < parts.length - 1; i++) {
-        const froms = parts[i].split(/[ ]{2,}|\t+/).filter(Boolean);
-        const tos = parts[i + 1].split(/[ ]{2,}|\t+/).filter(Boolean);
+        const froms = parts[i].split(/[ ]{3,}|\t+/).filter(Boolean);
+        const tos = parts[i + 1].split(/[ ]{3,}|\t+/).filter(Boolean);
         for (const f of froms) {
           for (const rawT of tos) {
             const { target, edgeLabel } = extractTargetDescription(rawT);
@@ -97,7 +97,7 @@ export function toMermaid(text, direction = 'LR') {
         }
       }
       if (parts.length > 0) {
-        const last = parts[parts.length - 1].split(/[ ]{2,}|\t+/).filter(Boolean).pop();
+        const last = parts[parts.length - 1].split(/[ ]{3,}|\t+/).filter(Boolean).pop();
         if (last) prevNode = extractTargetDescription(last).target;
       }
       continue;

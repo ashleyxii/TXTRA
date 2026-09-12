@@ -6,7 +6,7 @@
 
 import { toMermaid } from './mermaid.js';
 
-const ARROW_DETECT_REGEX = /(?:>>|-->|-\.->|==>|->|→|⇒|--[^-=.]+->)/;
+const ARROW_DETECT_REGEX = /(?:>>|-->|-\.->|==>|->|→|⇒|--[^-=.]+->|gggt(?:[ ]{3,}|\t+))/;
 
 /**
  * ノードのデータ配列を 4 つの空白で結合した文字列にする。

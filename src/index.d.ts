@@ -79,7 +79,7 @@ export function parseIndent(line: string): IndentInfo;
 export function expandVirtualNewlines(source: string): string;
 
 /**
- * 文字列を空白2文字以上またはタブ文字で配列に分割する。
+ * 文字列を空白3文字以上またはタブ文字で配列に分割する。
  * @param text - 分割対象文字列
  * @param unmask - エスケープ復元関数（任意）
  */
