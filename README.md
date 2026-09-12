@@ -68,7 +68,7 @@ Matrix:
 npm install txtra
 ```
 
-### 1. JavaScript / TypeScript Usage
+### 2.1. JavaScript / TypeScript Usage
 ```javascript
 import { txtra, parseTXTRA, stringifyTXTRA, toJsonWithSchema } from 'txtra';
 
@@ -103,29 +103,35 @@ console.log(doc.toJson(schema));
 // => { name: 'Alice', age: 25, role: 'admin', tags: ['dev', 'lead'] }
 ```
 
-### 2. CLI (Command Line) Usage
+### 2.2. CLI (Command Line) Usage
 Run directly via `npx` without prior installation:
 
 ```bash
 # Convert TXTRA to Markdown and print to stdout (default)
-npx txtra input.txtra
+npx txtra input.txt
 
 # Output AST (NodeTree) as JSON
-npx txtra input.txtra --ast
+npx txtra input.txt --ast
+
+# Output CanonicalForm tuple array as JSON
+npx txtra input.txt --canonical
 
 # Output Mermaid flowchart
-npx txtra input.txtra --mermaid
+npx txtra input.txt --mermaid
 
 # Stringify JSON data back to TXTRA
 npx txtra data.json --stringify
 
 # Convert Markdown file back to TXTRA
 npx txtra document.md --to-txtra
+
+# Also accepts piped input from stdin
+cat notes.txt | npx txtra --mermaid
 ```
 
 ---
 
-## 3. Grammar Rules & Intent
+## 3. Grammar Rules
 
 ### Basics
 - __File Extension__: `.txt`
@@ -133,41 +139,27 @@ npx txtra document.md --to-txtra
 
 #### Document
 - __Headings__: Number of colons at the start of a line (`: Level 1` to `:::::: Level 6`).
-- __Lists__: Indented lines, or lines explicitly starting with `- ` or `* `.
+- __Lists__: Every line is implicitly a list item. Alternatively, lines starting explicitly with `- ` or `* `.
 
 #### Data Structure
 - __Key-Value__: `Key: Value`, duplicate keys permitted.
-- __Children__: Line break directly under `Key` followed by an indentation delta of 2 or more spaces, or tabs (`\t`).
-- __Arrays__: Separated by 2 or more spaces or tabs. Recommended: 4 spaces.
+- __Children__: A line break directly under `Key` or `Key:` (recommended) followed by an indentation delta of 2+ spaces, or a tab character (`\t`).
+- __Arrays__: Separated by 3 or more spaces or tabs. Recommended: 4 spaces. (update 1.0.2: 2+ → 3+)
 - __Escapes__: Single character `\X`, inline `` `...` ``, block ` ```...``` ` (Markdown compatible).
 
-### Key-Value Variations
-- `Key: Value`
-- `Key.. Value`
+### Interpretive Syntaxes
+Mechanisms triggered during specific interpretations.
 
-To preserve typing rhythm without forcing the Shift key (`Shift + ;`) on physical keyboards or symbol page flips on mobile devices, `Key.. Value` and `Key..` are accepted as aliases for colons. They are safely recognized only when immediately followed by whitespace or line end.
-
-### Container Variations
-- `Key:`  
-  `  INDENT`
-- `Key`  
-  `  INDENT`
-- `Key..`  
-  `  INDENT`
-
-Trailing colons on container nodes are automatically inferred, but writing `Key:` as the base grammar is recommended. It serves as a visual guide for humans to instantly distinguish "container xor value".
-
-### Duplicate Keys & Dot References (.Key:)
-In notes and thought logs, what you write later is always "the present", while previous lines are "history". Because TXTRA interprets all sibling elements at the same depth as a list, duplicate keys are naturally embraced.
-
-To append attributes to the most recently defined scope of the same name, prefix the key with a dot: `.Key:` (or `.Key..`). It is parsed as a reference to the latest matching scope (`ref.latest.Key`), reopening the scope logically without mutating historical records.
-
-### Table & Matrix Markdown Interpretation
+#### Table & Matrix Markdown Interpretation
 - `Table:`: When containing 2 or more lines of array data, it compiles into a table (GFM Table) with row 1 as headers and subsequent rows as data.
 - `Matrix:`: When containing 2 or more lines of array data, it compiles into a headerless table (GFM Table) with row 1 onwards treated as data rows.
 
-### Virtual Newlines
-`.: ` or line-ending `.:` restores newlines and indentation in single-line input environments such as chat prompts or CLI arguments.
+#### Duplicate Keys & Dot References (.Key:)
+In notes and thought logs, what you write later is always "the present", while previous lines are "history". TXTRA internally interprets every line as a headed list, naturally embracing duplicate keys.
+
+If you want to append attributes to the immediately preceding scope of the same name, prefix the key with a dot: `.Key:`. It is parsed as a reference to the latest matching scope (`ref.latest.Key`), reopening the scope logically without mutating historical records.
+
+Combining these unifies interpretations for latest extraction, diff extraction, and multiple extraction.
 
 ---
 
@@ -186,14 +178,42 @@ Fanout:
   Queue    >>    WorkerA    WorkerB    WorkerC
   WorkerA    WorkerB    WorkerC    >>    Database
 ```
-
 - __Safe Node Identification__: Even if labels include spaces, brackets, colon descriptions, or Mermaid reserved words (such as `end`), unique internal node IDs are automatically assigned for safe conversion.
 - __Line Continuation__: If a line begins with `>>`, it is automatically connected from the preceding node.
 - __Round-trip Restoration__: `fromMarkdown()` automatically translates ` ```mermaid ` blocks in Markdown back into TXTRA Arrow syntax.
 
 ---
 
-## 5. Schema Validation & Type Casting (`toJsonWithSchema`)
+## 5. Physical Grammar (new 1.0.2)
+Born from the desire not to break typing rhythm—avoiding `Shift + ;` on keyboards, symbol page flips on smartphones, or awkward reaches on 60% keyboards. This concept is embodied as "physical grammar", and input-first implementations as physical aliases. Since it degrades visual aesthetics quite a bit, normalizing it before saving is recommended.
+
+#### Colon Alias
+```
+Key.. Value
+Key.. 
+  Children
+```
+`Key.. ` is supported as an alternative alias for syntax colons. Safely detected only when not a triple-dot and immediately followed by whitespace or line end. In normal usage without colons, parent keys are determined solely by indentation anyway.
+
+### Block Alias (new 1.0.2)
+```
+,,,,
+block
+,,,,
+```
+Born for 65% keyboardists. Physical alias for inline escapes was intentionally dropped (TXTRA already tolerates plenty of symbols in plain text, and anything more would just pollute the prose).
+
+### Virtual Newlines
+`.: ` or line-ending `.:` restores newlines and indentation in single-line environments where sending and Enter cannot be distinguished, like chat prompts or CLI arguments.
+
+### Arrow Alias (new 1.0.2)
+```
+gggt 
+```
+For those who find even `>>` a hassle, feel free to use `gggt`.
+Exclusively supported within inline array contexts followed by 3+ spaces or a tab.
+
+## 6. Schema Validation & Type Casting (`toJsonWithSchema`)
 
 TXTRA parses raw text into string-based AST trees by default. When structured types (integers, booleans, arrays of objects) are required—such as when parsing LLM outputs or configuration files—`doc.toJson(schema)` validates and casts nodes according to a standard JSON Schema definition.
 
@@ -220,7 +240,7 @@ console.log(doc.toJson(schema));
 
 ---
 
-## 6. Architecture & Performance
+## 7. Architecture & Performance
 
 - **Zero Dependencies**: Pure JavaScript implementation with no external runtime packages.
 - **Single-Pass Scanner**: Lightweight character scanning avoiding heavy regular expression backtracking.
