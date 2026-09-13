@@ -3,7 +3,7 @@
 > **TXT in Readable Annotation** — Lightweight structured text format, parser, and converter for JavaScript & TypeScript.  
 > Zero dependencies. Zero build-step required. 100% deterministic tree parsing.
 
-[![npm version](https://img.shields.io/badge/npm-v1.0.2-cb3837.svg)](https://www.npmjs.com/package/txtra)
+[![npm version](https://img.shields.io/badge/npm-v1.0.3-cb3837.svg)](https://www.npmjs.com/package/txtra)
 [![License: 0BSD](https://img.shields.io/badge/License-0BSD-blue.svg)](https://opensource.org/licenses/0BSD)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](package.json)
 [![TypeScript](https://img.shields.io/badge/types-TypeScript-blue.svg)](src/index.d.ts)
@@ -253,6 +253,15 @@ interface TXTRANode {
   label?: string;         // For arrow syntax
 }
 ```
+
+---
+
+## 5. Changelog
+
+- **v1.0.3**: fix: prevent colon false-positives (times/URLs/ports) and support auto-promotion of scalar keys to containers
+- **v1.0.2**: feat: add physical grammar aliases (colon `..`, block `,,,,`, arrow `gggt`) and update array delimiter to 3+ spaces
+- **v1.0.1**: docs: refine format comparison and prune package files
+- **v1.0.0**: feat: initial release of TXTRA format, parser, and converters
 
 ---
 

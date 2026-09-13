@@ -77,7 +77,7 @@ function classifyLineToken({ depth, content, isExplicitList, lineIndex }) {
         afterColons++;
       }
       const titleStr = masked.slice(afterColons).trim();
-      if (level >= 1 && level <= 6 && titleStr.length > 0) {
+      if (level >= 1 && level <= 6 && afterColons > level && titleStr.length > 0) {
         return {
           type: 'HEADING',
           depth,
@@ -87,41 +87,56 @@ function classifyLineToken({ depth, content, isExplicitList, lineIndex }) {
           line: lineIndex + 1
         };
       }
-    }
-
-    // 2. ドット参照構文 (.NODE: or .NODE: data) - 先頭文字が '.'
-    if (firstChar === 46 && colonIndex > 1) {
-      const rawKey = masked.slice(1, colonIndex).trim();
-      if (rawKey.length > 0) {
-        const nodeName = `ref.latest.${unmask(rawKey)}`;
-        const rest = masked.slice(colonIndex + 1).trim();
-        const data = rest ? splitArrayValues(rest, unmask) : [];
-        return {
-          type: rest ? 'KEY_VALUE' : 'CONTAINER',
-          depth,
-          node: nodeName,
-          data,
-          isExplicitList,
-          line: lineIndex + 1
-        };
+    } else {
+      // 構造化コロン (:␣ または :行末) を探索 (13:54 や URL 等の誤爆を防止)
+      let targetColonIndex = -1;
+      let searchFrom = 0;
+      while (true) {
+        const idx = masked.indexOf(':', searchFrom);
+        if (idx === -1) break;
+        if (idx === masked.length - 1 || masked.charCodeAt(idx + 1) === 32 || masked.charCodeAt(idx + 1) === 9) {
+          targetColonIndex = idx;
+          break;
+        }
+        searchFrom = idx + 1;
       }
-    }
 
-    // 3. 通常のコロン構文 (KEY: or KEY: DATA) - 先頭以外にコロンがある
-    if (colonIndex > 0) {
-      const rawKey = masked.slice(0, colonIndex).trim();
-      if (rawKey.length > 0) {
-        const nodeName = unmask(rawKey);
-        const rest = masked.slice(colonIndex + 1).trim();
-        const data = rest ? splitArrayValues(rest, unmask) : [];
-        return {
-          type: rest ? 'KEY_VALUE' : 'CONTAINER',
-          depth,
-          node: nodeName,
-          data,
-          isExplicitList,
-          line: lineIndex + 1
-        };
+      if (targetColonIndex !== -1) {
+        // 2. ドット参照構文 (.NODE: or .NODE: data) - 先頭文字が '.'
+        if (firstChar === 46 && targetColonIndex > 1) {
+          const rawKey = masked.slice(1, targetColonIndex).trim();
+          if (rawKey.length > 0) {
+            const nodeName = `ref.latest.${unmask(rawKey)}`;
+            const rest = masked.slice(targetColonIndex + 1).trim();
+            const data = rest ? splitArrayValues(rest, unmask) : [];
+            return {
+              type: rest ? 'KEY_VALUE' : 'CONTAINER',
+              depth,
+              node: nodeName,
+              data,
+              isExplicitList,
+              line: lineIndex + 1
+            };
+          }
+        }
+
+        // 3. 通常のコロン構文 (KEY: or KEY: DATA) - 先頭以外にコロンがある
+        if (firstChar !== 46 && targetColonIndex > 0) {
+          const rawKey = masked.slice(0, targetColonIndex).trim();
+          if (rawKey.length > 0) {
+            const nodeName = unmask(rawKey);
+            const rest = masked.slice(targetColonIndex + 1).trim();
+            const data = rest ? splitArrayValues(rest, unmask) : [];
+            return {
+              type: rest ? 'KEY_VALUE' : 'CONTAINER',
+              depth,
+              node: nodeName,
+              data,
+              isExplicitList,
+              line: lineIndex + 1
+            };
+          }
+        }
       }
     }
   }

@@ -4,10 +4,10 @@
 
 > プレーンテキストの自然さと、決定論的な木構造を両立する軽量構造化テキストフォーマット
 
-[![npm version](https://img.shields.io/badge/npm-v1.0.2-cb3837.svg)](https://www.npmjs.com/package/txtra)
+[![npm version](https://img.shields.io/badge/npm-v1.0.3-cb3837.svg)](https://www.npmjs.com/package/txtra)
 [![License: 0BSD](https://img.shields.io/badge/License-0BSD-blue.svg)](https://opensource.org/licenses/0BSD)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](package.json)
-[![Tests: 51 passing](https://img.shields.io/badge/tests-51%20passing-brightgreen.svg)](tests/)
+[![Tests: 56 passing](https://img.shields.io/badge/tests-56%20passing-brightgreen.svg)](tests/)
 [![TypeScript](https://img.shields.io/badge/types-TypeScript-blue.svg)](src/index.d.ts)
 
 [Web Playground (Live Demo)](https://ashleyxii.github.io/TXTRA/)  
@@ -139,7 +139,7 @@ npx txtra document.md --to-txtra
 #### データ構造
 - __キー・バリュー__: `Key: Value`、重複許容。 
 - __子要素__: `Key`+改行 または`Key:`+改行(推奨) 直下にインデント半角空白2文字以上の差分、またはタブ文字 (`\t`) 
-- __配列__: 半角空白3文字以上またはタブ文字で分離。推奨は半角空白4文字。(update 1.0.2: 2+ →3+)
+- __配列__: 半角空白3文字以上またはタブ文字で分離。推奨は半角空白4文字。
 - __エスケープ__: 単文字 `\X`、インライン `` `...` ``、ブロック ` ```...``` ` (Markdown互換)
 
 ### 解釈構文
@@ -179,7 +179,7 @@ Fanout:
 
 ---
 
-## 5. フィジカル文法(new 1.0.2)
+## 5. フィジカル文法
 PCでの Shift キー入力（`Shift + ;`）やスマホでの記号切り替え、60%キーボード環境等でも打鍵リズムを損ねたくない、という概念をフィジカル文法として、入力優位の実装をフィジカルエイリアスとして体現しました。見た目がそれなりに悪化するため、正規化されることを推奨します。
 
 #### コロン エイリアス
@@ -190,7 +190,7 @@ Key..
 ```
 構文コロンの代替エイリアスとして`Key.. ` を設定します。非3連符かつ直後が空白または行末の場合のみ安全に判定されます。通常でも親Keyの場合はインデントのみで判定します。
 
-### ブロックエイリアス(new 1.0.2)
+### ブロックエイリアス
 ```
 ,,,,
 block
@@ -201,7 +201,7 @@ block
 ### 仮想改行 (Virtual Newlines)
 `.: ` または行末の `.:` でチャット欄やCLI引数など、送信とEnterが区別出来ない入力環境で、改行とインデントを復元します。
 
-### アローエイリアス(new 1.0.2)
+### アローエイリアス
 ```
 gggt 
 ```
@@ -248,6 +248,15 @@ console.log(doc.toJson(schema));
 - [TXTRA 言語仕様書 (TXTRA.md)](./TXTRA.md) — *言語仕様書と AST 内部表現。*
 - [English Documentation (README.md)](./README.md) — *英語ドキュメント*
 - [世界人綴宣言 (docs/UDHW.md)](./docs/UDHW.md) — *マニフェスト。*
+
+---
+
+## 更新履歴
+
+- **v1.0.3**: fix: コロン構文の誤判定防止（時刻・URL・ポート番号）およびスカラーキー配下の子要素自動コンテナ昇格
+- **v1.0.2**: feat: フィジカル文法エイリアス（コロン `..`、ブロック `,,,,`、アロー `gggt`）の追加、配列セパレーターを空白3文字以上に変更
+- **v1.0.1**: docs: 形式比較記述の洗練、パッケージ同梱ファイルの整理
+- **v1.0.0**: feat: TXTRA 言語仕様・パーサー・相互変換ツールの初期リリース
 
 ---
 

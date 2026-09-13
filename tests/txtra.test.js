@@ -490,3 +490,176 @@ Item:
   const normalMd = toMarkdown(normalAst);
   assert.ok(!normalMd.includes('```mermaid'));
 });
+
+test('コロン構文の誤爆防止: 13:54 や URL、ポート番号などが誤って構造化されないこと', () => {
+  // 1. 13:54 単体行がテキスト行 (_) として解釈される
+  const timeAst = parseTXTRA('13:54');
+  assert.deepEqual(timeAst, [{ node: '_', data: ['13:54'] }]);
+
+  // 2. URL 単体行がテキスト行 (_) として解釈される
+  const urlAst = parseTXTRA('https://example.com/path');
+  assert.deepEqual(urlAst, [{ node: '_', data: ['https://example.com/path'] }]);
+
+  // 3. ポート番号単体行 (:8012) がテキスト行 (_) として解釈される（見出しやキーバリューにならない）
+  const portAst = parseTXTRA(':8012');
+  assert.deepEqual(portAst, [{ node: '_', data: [':8012'] }]);
+
+  // 4. コンテナ配下の時刻行
+  const containerWithTime = `
+Log:
+  13:54
+  14:00
+`;
+  const logAst = parseTXTRA(containerWithTime);
+  assert.equal(logAst[0].node, 'Log');
+  assert.deepEqual(logAst[0].data, [
+    { node: '_', data: ['13:54'] },
+    { node: '_', data: ['14:00'] }
+  ]);
+
+  // 5. 時刻を値に持つキーバリューは正常に認識される
+  const kvTimeAst = parseTXTRA('time: 13:54');
+  assert.deepEqual(kvTimeAst, [{ node: 'time', data: ['13:54'] }]);
+
+  // 6. 時刻をキーとし、末尾に :␣ を持つ行は正常にキーバリューとして認識される
+  const timeKeyAst = parseTXTRA('13:54: meeting');
+  assert.deepEqual(timeKeyAst, [{ node: '13:54', data: ['meeting'] }]);
+
+  // 7. コロン行末 (コンテナ) は正常に認識される
+  const containerAst = parseTXTRA('Project:');
+  assert.deepEqual(containerAst, [{ node: 'Project', data: [] }]);
+
+  // 8. コロン直後にスペースのみ (コンテナ) も正常に認識される
+  const containerSpaceAst = parseTXTRA('Project:   ');
+  assert.deepEqual(containerSpaceAst, [{ node: 'Project', data: [] }]);
+
+  // 9. 明示リスト記号付きの時刻行 (- 13:54)
+  const listTimeAst = parseTXTRA('- 13:54');
+  assert.deepEqual(listTimeAst, [{ node: '_', data: ['13:54'] }]);
+
+  // 10. 時刻のインライン配列 (13:54    14:00)
+  const arrayTimeAst = parseTXTRA('13:54    14:00');
+  assert.deepEqual(arrayTimeAst, [{ node: '_', data: ['13:54', '14:00'] }]);
+
+  // 11. URL とポート番号を含む値
+  const urlPortAst = parseTXTRA('API: http://localhost:8080/v1');
+  assert.deepEqual(urlPortAst, [{ node: 'API', data: ['http://localhost:8080/v1'] }]);
+
+  // 12. タブ文字区切りのキーバリュー (Key:\tValue)
+  const tabKvAst = parseTXTRA('Key:\tValue');
+  assert.deepEqual(tabKvAst, [{ node: 'Key', data: ['Value'] }]);
+});
+
+test('定義外・インデント付き見出し/コロン行の挙動検証', () => {
+  // 1. 先頭行がインデント付き見出し (:␣): 親ノードがないためルート直下の見出しノードとして配置される
+  const indentH1Ast = parseTXTRA('  : Indented Heading');
+  assert.deepEqual(indentH1Ast, [
+    { node: '_H1', data: ['Indented Heading'] }
+  ]);
+
+  // 2. 先頭行がインデント付きレベル2見出し (::␣)
+  const indentH2Ast = parseTXTRA('    :: Indented SubHeading');
+  assert.deepEqual(indentH2Ast, [
+    { node: '_H2', data: ['Indented SubHeading'] }
+  ]);
+
+  // 3. 先頭行がインデント付きかつスペースなしコロン (  :8012): 見出しにならずテキストノード (_)
+  const indentPortAst = parseTXTRA('  :8012');
+  assert.deepEqual(indentPortAst, [
+    { node: '_', data: [':8012'] }
+  ]);
+
+  // 4. 先頭行がインデント付き単一コロン (  :): タイトル・キー名なしのためテキストノード (_)
+  const indentColonAst = parseTXTRA('  :');
+  assert.deepEqual(indentColonAst, [
+    { node: '_', data: [':'] }
+  ]);
+
+  // 5. 親コンテナ配下にインデントされた見出しが記述された場合: 親ノード配下にネストされる
+  const nestedHeadingAst = parseTXTRA('Section:\n  : Nested Heading\n  body');
+  assert.deepEqual(nestedHeadingAst, [
+    {
+      node: 'Section',
+      data: [
+        { node: '_H1', data: ['Nested Heading'] },
+        { node: '_', data: ['body'] }
+      ]
+    }
+  ]);
+});
+
+test('スカラー値付きキーへの子要素付与による無名ノード (_) 自動昇格の挙動検証', () => {
+  // 1. key: value の下にインデントされた key-value 子要素が付与された場合:
+  //    既存の値文字列が自動的に無名ノード { node: '_', data: ['value'] } に昇格し、子要素と並列なコンテナとなる
+  const kvWithChildKv = parseTXTRA('key: value\n  childKey: childVal');
+  assert.deepEqual(kvWithChildKv, [
+    {
+      node: 'key',
+      data: [
+        { node: '_', data: ['value'] },
+        { node: 'childKey', data: ['childVal'] }
+      ]
+    }
+  ]);
+
+  // 2. key: value の下にインデントされたテキスト行が付与された場合
+  const kvWithChildText = parseTXTRA('key: value\n  child text');
+  assert.deepEqual(kvWithChildText, [
+    {
+      node: 'key',
+      data: [
+        { node: '_', data: ['value'] },
+        { node: '_', data: ['child text'] }
+      ]
+    }
+  ]);
+
+  // 3. インライン配列を持つ key: value1    value2 の下に子要素が付与された場合
+  const arrayKvWithChild = parseTXTRA('key: value1    value2\n  child: sub');
+  assert.deepEqual(arrayKvWithChild, [
+    {
+      node: 'key',
+      data: [
+        { node: '_', data: ['value1', 'value2'] },
+        { node: 'child', data: ['sub'] }
+      ]
+    }
+  ]);
+
+  // 4. key: value の下に明示リスト記号 (- item) で子要素が付与された場合
+  const kvWithListChild = parseTXTRA('key: value\n  - item1\n  - item2');
+  assert.deepEqual(kvWithListChild, [
+    {
+      node: 'key',
+      data: [
+        { node: '_', data: ['value'] },
+        { node: '_', data: ['item1'] },
+        { node: '_', data: ['item2'] }
+      ]
+    }
+  ]);
+
+  // 5. 多段ネスト（親 -> 子 -> 孫）での昇格
+  const deepNested = parseTXTRA('Parent:\n  sub: val\n    nested: deep');
+  assert.deepEqual(deepNested, [
+    {
+      node: 'Parent',
+      data: [
+        {
+          node: 'sub',
+          data: [
+            { node: '_', data: ['val'] },
+            { node: 'nested', data: ['deep'] }
+          ]
+        }
+      ]
+    }
+  ]);
+
+  // 6. Markdown 変換でも [object Object] に化けず自然なネストリストになること
+  const md = toMarkdown(kvWithChildKv);
+  assert.match(md, /- \*\*key\*\*:\n {2}- value\n {2}- \*\*childKey\*\*: childVal/);
+});
+
+
+

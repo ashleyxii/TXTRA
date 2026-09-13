@@ -211,3 +211,117 @@ test('toJsonWithSchema: トップレベルが array の場合', () => {
     { name: 'Item2', price: 200 }
   ]);
 });
+
+test('toJsonWithSchema: スカラー値付きキーから自動昇格したノードのマッピング (_ と子プロパティ)', () => {
+  const source = `
+key: value
+  childKey: childVal
+`;
+  const schema = {
+    type: 'object',
+    properties: {
+      key: {
+        type: 'object',
+        properties: {
+          _: { type: 'string' },
+          childKey: { type: 'string' }
+        }
+      }
+    }
+  };
+
+  const json = toJsonWithSchema(source, schema);
+  assert.deepEqual(json, {
+    key: {
+      _: 'value',
+      childKey: 'childVal'
+    }
+  });
+});
+
+test('toJsonWithSchema: ノード内の文字列を string または string 配列として抽出するマッピング', () => {
+  // 1. スカラー昇格ノードから単一文字列 (string) を抽出:
+  //    子プロパティ (childKey) は混入せず、ノード自身の文字列 ("value") が取得できる
+  const source1 = `
+key: value
+  childKey: childVal
+`;
+  const schemaString = {
+    type: 'object',
+    properties: {
+      key: { type: 'string' }
+    }
+  };
+  assert.deepEqual(toJsonWithSchema(source1, schemaString), {
+    key: 'value'
+  });
+
+  // 2. スカラー昇格ノードから文字列配列 (array of string) を抽出:
+  //    子プロパティ (childVal) は混入せず、ノード自身の値配列 (["value"]) が取得できる
+  const schemaArray = {
+    type: 'object',
+    properties: {
+      key: {
+        type: 'array',
+        items: { type: 'string' }
+      }
+    }
+  };
+  assert.deepEqual(toJsonWithSchema(source1, schemaArray), {
+    key: ['value']
+  });
+
+  // 3. インライン配列を持つ昇格ノード (key: val1    val2 \n  childKey: childVal)
+  const source2 = `
+key: val1    val2
+  childKey: childVal
+`;
+  assert.deepEqual(toJsonWithSchema(source2, schemaString), {
+    key: 'val1    val2'
+  });
+  assert.deepEqual(toJsonWithSchema(source2, schemaArray), {
+    key: ['val1', 'val2']
+  });
+
+  // 4. 複数行テキストコンテナ (description:\n  Line 1\n  Line 2)
+  const source3 = `
+description:
+  Line 1
+  Line 2
+`;
+  assert.deepEqual(toJsonWithSchema(source3, {
+    type: 'object',
+    properties: {
+      description: { type: 'string' }
+    }
+  }), {
+    description: 'Line 1\nLine 2'
+  });
+  assert.deepEqual(toJsonWithSchema(source3, {
+    type: 'object',
+    properties: {
+      description: {
+        type: 'array',
+        items: { type: 'string' }
+      }
+    }
+  }), {
+    description: ['Line 1', 'Line 2']
+  });
+
+  // 5. 数値型 (number) の昇格ノード
+  const source4 = `
+score: 98.5
+  verified: true
+`;
+  assert.deepEqual(toJsonWithSchema(source4, {
+    type: 'object',
+    properties: {
+      score: { type: 'number' }
+    }
+  }), {
+    score: 98.5
+  });
+});
+
+

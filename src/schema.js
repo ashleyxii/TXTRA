@@ -61,13 +61,63 @@ function isContainerNode(node) {
 }
 
 /**
- * ノードから直接のテキスト文字列配列を取り出す。
+ * ノードから直接または無名ノード (_) 経由のプリミティブ文字列配列を取り出す。
+ * 名前付き子プロパティは除外され、ノード自身が保持する値・テキスト行のみを抽出します。
  * @param {object} node - AST ノード
  * @returns {string[]}
  */
 function getPrimitiveValues(node) {
-  if (!node || !Array.isArray(node.data)) return [];
-  return node.data.filter(v => typeof v !== 'object').map(String);
+  if (!node) return [];
+  if (Array.isArray(node.data)) {
+    const direct = node.data.filter(v => typeof v !== 'object' || v === null);
+    if (direct.length > 0) {
+      return direct.map(String);
+    }
+    const anonValues = [];
+    for (const child of node.data) {
+      if (child && typeof child === 'object' && child.node === '_') {
+        if (Array.isArray(child.data)) {
+          anonValues.push(...child.data.filter(v => typeof v !== 'object' || v === null).map(String));
+        }
+      }
+    }
+    return anonValues;
+  }
+  if (typeof node !== 'object') {
+    return [String(node)];
+  }
+  return [];
+}
+
+/**
+ * ノードが保持するテキストコンテンツを単一の文字列として抽出する。
+ * 複数行の無名テキスト行 (_) がある場合は改行 (\n) で結合し、インライン配列は空白 (4文字) で結合します。
+ * @param {object} node - AST ノード
+ * @returns {string|null}
+ */
+function getNodeText(node) {
+  if (!node) return null;
+  if (Array.isArray(node.data)) {
+    const direct = node.data.filter(v => typeof v !== 'object' || v === null);
+    if (direct.length > 0) {
+      return direct.join('    ');
+    }
+    const lines = [];
+    for (const child of node.data) {
+      if (child && typeof child === 'object' && child.node === '_') {
+        if (Array.isArray(child.data)) {
+          const prims = child.data.filter(v => typeof v !== 'object' || v === null).map(String);
+          if (prims.length > 0) {
+            lines.push(prims.join('    '));
+          }
+        }
+      }
+    }
+    if (lines.length > 0) {
+      return lines.join('\n');
+    }
+  }
+  return typeof node !== 'object' ? String(node) : null;
 }
 
 /**
@@ -85,7 +135,11 @@ function extractPropertiesFromItem(item) {
     const children = [];
     for (const child of item.data) {
       if (child && typeof child === 'object') {
-        children.push(child);
+        if (child.node === '_') {
+          primitives.push(...(child.data || []));
+        } else {
+          children.push(child);
+        }
       } else if (child !== undefined) {
         primitives.push(child);
       }
@@ -138,9 +192,6 @@ function mapArray(sourceNode, schema = {}, options = {}) {
       });
     }
     return sourceNode.flatMap(node => {
-      if (isContainerNode(node)) {
-        return mapArray(node.data, schema, options);
-      }
       return getPrimitiveValues(node).map(v => castPrimitive(v, itemSchema));
     });
   }
@@ -157,12 +208,6 @@ function mapArray(sourceNode, schema = {}, options = {}) {
   }
 
   // プリミティブ配列の場合
-  if (isContainerNode(sourceNode)) {
-    return sourceNode.data.flatMap(child => {
-      return getPrimitiveValues(child).map(v => castPrimitive(v, itemSchema));
-    });
-  }
-
   const values = getPrimitiveValues(sourceNode);
   if (values.length > 0) {
     return values.map(v => castPrimitive(v, itemSchema));
@@ -194,9 +239,14 @@ function mapObject(nodes, schema = {}, options = {}) {
       } else if (propType === 'array') {
         result[propKey] = mapArray(matchedNode, propSchema, options);
       } else {
-        const values = getPrimitiveValues(matchedNode);
-        const rawVal = values.length > 0 ? values[0] : matchedNode.data?.[0];
-        result[propKey] = castPrimitive(rawVal, propSchema);
+        const textVal = getNodeText(matchedNode);
+        if (textVal !== null) {
+          result[propKey] = castPrimitive(textVal, propSchema);
+        } else if (propSchema.default !== undefined) {
+          result[propKey] = propSchema.default;
+        } else {
+          result[propKey] = castPrimitive(null, propSchema);
+        }
       }
     } else if (propSchema.default !== undefined) {
       result[propKey] = propSchema.default;

@@ -4,7 +4,7 @@
 
 > A lightweight structured text format balancing plain-text readability and deterministic tree structures.
 
-[![npm version](https://img.shields.io/badge/npm-v1.0.2-cb3837.svg)](https://www.npmjs.com/package/txtra)
+[![npm version](https://img.shields.io/badge/npm-v1.0.3-cb3837.svg)](https://www.npmjs.com/package/txtra)
 [![License: 0BSD](https://img.shields.io/badge/License-0BSD-blue.svg)](https://opensource.org/licenses/0BSD)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](package.json)
 [![TypeScript](https://img.shields.io/badge/types-TypeScript-blue.svg)](src/index.d.ts)
@@ -144,7 +144,7 @@ cat notes.txt | npx txtra --mermaid
 #### Data Structure
 - __Key-Value__: `Key: Value`, duplicate keys permitted.
 - __Children__: A line break directly under `Key` or `Key:` (recommended) followed by an indentation delta of 2+ spaces, or a tab character (`\t`).
-- __Arrays__: Separated by 3 or more spaces or tabs. Recommended: 4 spaces. (update 1.0.2: 2+ → 3+)
+- __Arrays__: Separated by 3 or more spaces or tabs. Recommended: 4 spaces.
 - __Escapes__: Single character `\X`, inline `` `...` ``, block ` ```...``` ` (Markdown compatible).
 
 ### Interpretive Syntaxes
@@ -184,7 +184,7 @@ Fanout:
 
 ---
 
-## 5. Physical Grammar (new 1.0.2)
+## 5. Physical Grammar
 Born from the desire not to break typing rhythm—avoiding `Shift + ;` on keyboards, symbol page flips on smartphones, or awkward reaches on 60% keyboards. This concept is embodied as "physical grammar", and input-first implementations as physical aliases. Since it degrades visual aesthetics quite a bit, normalizing it before saving is recommended.
 
 #### Colon Alias
@@ -195,7 +195,7 @@ Key..
 ```
 `Key.. ` is supported as an alternative alias for syntax colons. Safely detected only when not a triple-dot and immediately followed by whitespace or line end. In normal usage without colons, parent keys are determined solely by indentation anyway.
 
-### Block Alias (new 1.0.2)
+### Block Alias
 ```
 ,,,,
 block
@@ -206,7 +206,7 @@ Born for 65% keyboardists. Physical alias for inline escapes was intentionally d
 ### Virtual Newlines
 `.: ` or line-ending `.:` restores newlines and indentation in single-line environments where sending and Enter cannot be distinguished, like chat prompts or CLI arguments.
 
-### Arrow Alias (new 1.0.2)
+### Arrow Alias
 ```
 gggt 
 ```
@@ -253,6 +253,15 @@ console.log(doc.toJson(schema));
 - [TXTRA Specification (TXTRA.md)](./TXTRA.md) — *Syntax specification and AST representations.*
 - [Japanese Documentation (README_ja.md)](./README_ja.md) — *日本語ドキュメント*
 - [The Universal Declaration of Human Writes (docs/UDHW.md)](./docs/UDHW.md) — *Manifesto.*
+
+---
+
+## Changelog
+
+- **v1.0.3**: fix: prevent colon false-positives (times/URLs/ports) and support auto-promotion of scalar keys to containers
+- **v1.0.2**: feat: add physical grammar aliases (colon `..`, block `,,,,`, arrow `gggt`) and update array delimiter to 3+ spaces
+- **v1.0.1**: docs: refine format comparison and prune package files
+- **v1.0.0**: feat: initial release of TXTRA format, parser, and converters
 
 ---
 

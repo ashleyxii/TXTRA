@@ -36,7 +36,7 @@ export function buildAst(tokens) {
 
     const parent = stack[stack.length - 1];
 
-    // コロンなしテキスト行 (_) の下に子要素がネストされた場合、node ← value 昇格を実行
+    // 1. コロンなしテキスト行 (_) の下に子要素がネストされた場合、node ← value 昇格を実行
     if (parent.nodeItem && parent.nodeItem.node === '_') {
       const promotedName = Array.isArray(parent.nodeItem.data) && parent.nodeItem.data.length > 0
         ? parent.nodeItem.data.join('    ')
@@ -44,6 +44,18 @@ export function buildAst(tokens) {
       parent.nodeItem.node = promotedName;
       parent.nodeItem.data = [];
       parent.data = parent.nodeItem.data;
+    } else if (parent.nodeItem && Array.isArray(parent.nodeItem.data) && parent.nodeItem.data.length > 0) {
+      // 2. スカラー値付きキー (Key: Value) の下に子要素がネストされた場合、値を無名ノード (_) に昇格してコンテナ化
+      const hasPrimitives = parent.nodeItem.data.some(d => typeof d !== 'object' || d === null);
+      if (hasPrimitives) {
+        const primitives = parent.nodeItem.data.filter(d => typeof d !== 'object' || d === null);
+        const objects = parent.nodeItem.data.filter(d => typeof d === 'object' && d !== null);
+        parent.nodeItem.data = [
+          { node: '_', data: primitives },
+          ...objects
+        ];
+        parent.data = parent.nodeItem.data;
+      }
     }
 
     // 実効深さの計算:
